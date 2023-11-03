@@ -62,9 +62,17 @@ Add scoring for ships hitting an asteroid. Also, draw our own ship filled.
 
 ## Step 7
 
-_yet to be written_
+Code: [step7.html](step7.html) ([RUN](https://croquet.github.io/multiblaster-tutorial/step7.html))
 
-Add render smoothing for 60 fps animation.
+Add render smoothing for 60 fps animation. The models move at 20 fps (because of the 50 ms future send
+in the main loop) but for smooth animation you typically want to animate at a higher fps.
+While we could increase the model update rate, that would make the timing depend very much
+on the steadiness of ticks from the reflector.
+Instead, we do automatic in-betweening in the view by decoupling the rendering position from the
+model position, and updating the render position "smoothly."
+
+This step uses the exact same model code as in step 7, so you can actually run
+both side-by-side with the same session name and password to see the difference.
 
 ## Step 8
 

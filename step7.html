@@ -1,0 +1,393 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+        <title>Croquet Multiblaster</title>
+        <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+                background: #999;
+            }
+            #canvas {
+                background: #000;
+                object-fit: contain;
+                max-width: 100%;
+                max-height: 100%;
+            }
+        </style>
+        <script src="https://unpkg.com/@croquet/croquet@1.0"></script>
+    </head>
+    <body>
+        <canvas id="canvas" width="1000" height="1000"></canvas>
+        <script>
+
+class Game extends Croquet.Model {
+    init() {
+        this.asteroids = new Set();
+        for (let i = 0; i < 3; i++) Asteroid.create({});
+
+        this.ships = new Map();
+        this.subscribe(this.sessionId, "view-join", this.viewJoined);
+        this.subscribe(this.sessionId, "view-exit", this.viewExited);
+
+        this.blasts = new Set();
+
+        this.mainLoop();
+    }
+
+    viewJoined(viewId) {
+        const ship = Ship.create({ viewId });
+        this.ships.set(viewId, ship);
+    }
+
+    viewExited(viewId) {
+        const ship = this.ships.get(viewId);
+        this.ships.delete(viewId);
+        ship.destroy();
+    }
+
+    mainLoop() {
+        for (const ship of this.ships.values()) ship.move();
+        for (const asteroid of this.asteroids) asteroid.move();
+        for (const blast of this.blasts) blast.move();
+        this.checkCollisions();
+        this.future(50).mainLoop(); // move & check every 50 ms
+    }
+
+    checkCollisions() {
+        for (const asteroid of this.asteroids) {
+            if (asteroid.wasHit) continue;
+            const minx = asteroid.x - asteroid.size;
+            const maxx = asteroid.x + asteroid.size;
+            const miny = asteroid.y - asteroid.size;
+            const maxy = asteroid.y + asteroid.size;
+            for (const blast of this.blasts) {
+                if (blast.x > minx && blast.x < maxx && blast.y > miny && blast.y < maxy) {
+                    asteroid.hitBy(blast);
+                    break;
+                }
+            }
+            for (const ship of this.ships.values()) {
+                if (!ship.wasHit && ship.x + 10 > minx && ship.x - 10 < maxx && ship.y + 10 > miny && ship.y - 10 < maxy) {
+                    ship.hitBy(asteroid);
+                    break;
+                }
+            }
+        }
+   }
+}
+Game.register("Game");
+
+class Asteroid extends Croquet.Model {
+    get game() { return this.wellKnownModel("modelRoot"); }
+
+    init({ size, x, y, a, dx, dy, da }) {
+        super.init();
+        this.game.asteroids.add(this);
+        if (size) {
+            // init second asteroid after spliting
+            this.size = size;
+            this.x = x;
+            this.y = y;
+            this.a = a;
+            this.dx = dx;
+            this.dy = dy;
+            this.da = da;
+        } else {
+            // init new large asteroid
+            this.size = 40;
+            this.x = Math.random() * 400 - 200;
+            this.y = Math.random() * 400 - 200;
+            this.a = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 4 + 1;
+            this.dx = Math.cos(this.a) * speed;
+            this.dy = Math.sin(this.a) * speed;
+            this.da = (0.02 + Math.random() * 0.03) * (Math.random() < 0.5 ? 1 : -1);
+        }
+        this.wasHit = 0;
+    }
+
+    move() {
+        this.x = (this.x + this.dx + 1000) % 1000;
+        this.y = (this.y + this.dy + 1000) % 1000;
+        if (this.wasHit) {
+            // keep drifting as debris, larger pieces drift longer
+            this.wasHit++;
+            if (this.wasHit > this.size) {
+                this.destroy();
+            }
+        } else {
+            // spin
+            this.a = (this.a + this.da + Math.PI) % Math.PI;
+        }
+    }
+
+    hitBy(blast) {
+        if (!blast.ship.wasHit) blast.ship.scored();
+        if (this.size > 20) {
+            // split into two smaller faster asteroids
+            this.size *= 0.7;
+            this.da *= 1.5;
+            this.dx = -blast.dy * 10 / this.size;
+            this.dy = blast.dx * 10 / this.size;
+            Asteroid.create({ size: this.size, x: this.x, y: this.y, a: this.a, dx: -this.dx, dy: -this.dy, da: this.da });
+        } else {
+            this.wasHit = 1;
+        }
+        blast.destroy();
+    }
+
+    destroy() {
+        this.game.asteroids.delete(this);
+        super.destroy();
+        // spawn more asteroids if needed
+        if (this.game.asteroids.size < 3) Asteroid.create({});
+    }
+}
+Asteroid.register("Asteroid");
+
+class Ship extends Croquet.Model {
+    init({ viewId }) {
+        super.init();
+        this.viewId = viewId;
+        this.reset();
+        this.subscribe(viewId, "left-thruster", this.leftThruster);
+        this.subscribe(viewId, "right-thruster", this.rightThruster);
+        this.subscribe(viewId, "forward-thruster", this.forwardThruster);
+        this.subscribe(viewId, "fire-blaster", this.fireBlaster);
+    }
+
+    reset() {
+        this.x = 480 + 40 * Math.random();
+        this.y = 480 + 40 * Math.random();
+        this.a = -Math.PI / 2;
+        this.dx = 0;
+        this.dy = 0;
+        this.left = false;
+        this.right = false;
+        this.forward = false;
+        this.score = 0;
+        this.wasHit = 0;
+    }
+
+    leftThruster(active) {
+        this.left = active;
+    }
+
+    rightThruster(active) {
+        this.right = active;
+    }
+
+    forwardThruster(active) {
+        this.forward = active;
+    }
+
+    fireBlaster() {
+        // create blast moving at speed 20 in direction of ship
+        const dx = Math.cos(this.a) * 20;
+        const dy = Math.sin(this.a) * 20;
+        const x = this.x + dx;
+        const y = this.y + dy;
+        Blast.create({ x, y, dx, dy, ship: this });
+    }
+
+    move() {
+        if (this.wasHit) {
+            // keep drifting as debris for 3 seconds
+            if (++this.wasHit > 60) this.reset();
+        } else {
+            // process thruster controls
+            if (this.forward) this.accelerate(0.5);
+            if (this.left) this.a -= 0.2;
+            if (this.right) this.a += 0.2;
+        }
+        // float through space
+        this.x = (this.x + this.dx + 1000) % 1000;
+        this.y = (this.y + this.dy + 1000) % 1000;
+    }
+
+    accelerate(force) {
+        this.dx += Math.cos(this.a) * force;
+        this.dy += Math.sin(this.a) * force;
+        if (this.dx > 10) this.dx = 10;
+        if (this.dx < -10) this.dx = -10;
+        if (this.dy > 10) this.dy = 10;
+        if (this.dy < -10) this.dy = -10;
+    }
+
+    hitBy(asteroid) {
+        // turn both into debris
+        this.wasHit = 1;
+        asteroid.wasHit = 1;
+    }
+
+    scored() {
+        this.score++;
+    }
+}
+Ship.register("Ship");
+
+class Blast extends Croquet.Model {
+    get game() { return this.wellKnownModel("modelRoot"); }
+
+    init({x, y, dx, dy, ship}) {
+        super.init();
+        this.ship = ship;
+        this.x = x;
+        this.y = y;
+        this.dx = dx;
+        this.dy = dy;
+        this.t = 0;
+        this.game.blasts.add(this);
+    }
+
+    move() {
+        // move for 1.5 second before disappearing
+        if (++this.t > 30) return this.destroy();
+        this.x = (this.x + this.dx + 1000) % 1000;
+        this.y = (this.y + this.dy + 1000) % 1000;
+    }
+
+    destroy() {
+        this.game.blasts.delete(this);
+        super.destroy();
+    }
+}
+Blast.register("Blast");
+
+
+////////////////////////// VIEW //////////////////////////
+
+class Display extends Croquet.View {
+    constructor(model) {
+        super(model);
+        this.model = model;
+        this.context = canvas.getContext("2d");
+        this.smoothing = new WeakMap(); // position cache for interpolated rendering
+
+        document.onkeydown = (e) => {
+            if (e.repeat) return;
+            switch (e.key) {
+                case "ArrowLeft":  this.publish(this.viewId, "left-thruster", true); break;
+                case "ArrowRight": this.publish(this.viewId, "right-thruster", true); break;
+                case "ArrowUp":    this.publish(this.viewId, "forward-thruster", true); break;
+                case " ":          this.publish(this.viewId, "fire-blaster"); break;
+            }
+        };
+        document.onkeyup = (e) => {
+            if (e.repeat) return;
+            switch (e.key) {
+                case "ArrowLeft":  this.publish(this.viewId, "left-thruster", false); break;
+                case "ArrowRight": this.publish(this.viewId, "right-thruster", false); break;
+                case "ArrowUp":    this.publish(this.viewId, "forward-thruster", false); break;
+            }
+        };
+    }
+
+    // update is called once per render frame
+    update() {
+        this.context.clearRect(0, 0, 1000, 1000);
+        this.context.lineWidth = 3;
+        this.context.strokeStyle = "white";
+        this.context.fillStyle = "rgba(255, 255, 255, 0.5)";
+        this.context.font = "40px sans-serif";
+        for (const asteroid of this.model.asteroids) {
+            const { x, y, a } = this.smoothPosAndAngle(asteroid);
+            const { size } = asteroid;
+            this.context.save();
+            this.context.translate(x, y);
+            this.context.rotate(a);
+            this.context.beginPath();
+            if (!asteroid.wasHit) {
+                this.context.moveTo(+size,  0);
+                this.context.lineTo( 0, +size);
+                this.context.lineTo(-size,  0);
+                this.context.lineTo( 0, -size);
+            } else {
+                const t = asteroid.wasHit;
+                this.context.moveTo(+size + t,  0 + t);
+                this.context.lineTo( 0 + t, +size + t);
+                this.context.moveTo(-size - t,  0 - t);
+                this.context.lineTo( 0 - t, -size - t);
+                this.context.moveTo(-size - t,  0 + t);
+                this.context.lineTo( 0 - t, +size + t);
+                this.context.moveTo(+size + t,  0 - t);
+                this.context.lineTo( 0 + t, -size - t);
+            }
+            this.context.closePath();
+            this.context.stroke();
+            this.context.restore();
+        }
+        for (const ship of this.model.ships.values()) {
+            const { x, y, a } = this.smoothPosAndAngle(ship);
+            this.context.save();
+            this.context.translate(x, y);
+            this.context.fillText(ship.score, 30 - ship.wasHit * 2, 0);
+            this.context.rotate(a);
+            this.context.beginPath();
+            if (!ship.wasHit) {
+                this.context.moveTo(+20,   0);
+                this.context.lineTo(-20, +10);
+                this.context.lineTo(-20, -10);
+                this.context.closePath();
+                if (ship.viewId === this.viewId) this.context.fill();
+            } else {
+                const t = ship.wasHit;
+                this.context.moveTo(+20 + t,   0 + t);
+                this.context.lineTo(-20 + t, +10 + t);
+                this.context.moveTo(-20 - t * 1.4, +10);
+                this.context.lineTo(-20 - t * 1.4, -10);
+                this.context.moveTo(-20 + t, -10 - t);
+                this.context.lineTo(+20 + t,   0 - t);
+            }
+            this.context.stroke();
+            this.context.restore();
+        }
+        for (const blast of this.model.blasts) {
+            const { x, y } = this.smoothPos(blast);
+            this.context.save();
+            this.context.translate(x, y);
+            this.context.beginPath();
+            this.context.arc(0, 0, 2, 0, 2 * Math.PI);
+            this.context.closePath();
+            this.context.stroke();
+            this.context.restore();
+            this.context.beginPath();
+        }
+    }
+
+    smoothPos(obj) {
+        if (!this.smoothing.has(obj)) {
+            this.smoothing.set(obj, { x: obj.x, y: obj.y, a: obj.a });
+        }
+        const smoothed = this.smoothing.get(obj);
+        const dx = obj.x - smoothed.x;
+        const dy = obj.y - smoothed.y;
+        // if distance is large, don't smooth but jump to new position
+        if (Math.abs(dx) < 50) smoothed.x += dx * 0.3; else smoothed.x = obj.x;
+        if (Math.abs(dy) < 50) smoothed.y += dy * 0.3; else smoothed.y = obj.y;
+        return smoothed;
+    }
+
+    smoothPosAndAngle(obj) {
+        const smoothed = this.smoothPos(obj);
+        const da = obj.a - smoothed.a;
+        if (Math.abs(da) < 1) smoothed.a += da * 0.3; else smoothed.a = obj.a;
+        return smoothed;
+    }
+}
+
+Croquet.App.makeWidgetDock(); // show QR code
+
+Croquet.Session.join({
+    apiKey: '1_i65fcn11n7lhrb5n890hs3dhj11hfzfej57pvlrx', // get your own from croquet.io/keys
+    appId: 'io.croquet.multiblaster-tutorial',
+    name: Croquet.App.autoSession(),
+    password: Croquet.App.autoPassword(),
+    model: Game,
+    view: Display,
+});
+        </script>
+    </body>
+</html>
