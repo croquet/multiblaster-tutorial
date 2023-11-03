@@ -15,15 +15,23 @@
                 max-width: 100%;
                 max-height: 100%;
             }
-        </style>
+            #initials {
+                position: fixed; bottom: 10px; right: 70px; padding: .5em; border-radius: 30px;
+                opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
+                border: none; color: #000; text-align: center; font-size: 1.2em;
+            }
+       </style>
         <script src="https://unpkg.com/@croquet/croquet@1.0"></script>
     </head>
     <body>
         <canvas id="canvas" width="1000" height="1000"></canvas>
+        <input id="initials" type="text" maxlength="10" size="10" placeholder="Initials">
         <script>
 
 class Game extends Croquet.Model {
-    init() {
+    init(_, persisted) {
+        this.highscores = persisted?.highscores ?? {};
+
         this.asteroids = new Set();
         for (let i = 0; i < 3; i++) Asteroid.create({});
 
@@ -45,6 +53,12 @@ class Game extends Croquet.Model {
         const ship = this.ships.get(viewId);
         this.ships.delete(viewId);
         ship.destroy();
+    }
+
+    setHighscore(initials, score) {
+        if (this.highscores[initials] >= score) return;
+        this.highscores[initials] = score;
+        this.persistSession({ highscores: this.highscores });
     }
 
     mainLoop() {
@@ -148,6 +162,8 @@ class Asteroid extends Croquet.Model {
 Asteroid.register("Asteroid");
 
 class Ship extends Croquet.Model {
+    get game() { return this.wellKnownModel("modelRoot"); }
+
     init({ viewId }) {
         super.init();
         this.viewId = viewId;
@@ -156,6 +172,7 @@ class Ship extends Croquet.Model {
         this.subscribe(viewId, "right-thruster", this.rightThruster);
         this.subscribe(viewId, "forward-thruster", this.forwardThruster);
         this.subscribe(viewId, "fire-blaster", this.fireBlaster);
+        this.subscribe(viewId, "set-initials", this.setInitials);
     }
 
     reset() {
@@ -222,8 +239,20 @@ class Ship extends Croquet.Model {
         asteroid.wasHit = 1;
     }
 
+    setInitials(initials) {
+        if (!initials) return;
+        for (const ship of this.game.ships.values()) {
+            if (ship.initials === initials) return;
+        }
+        const highscore = this.game.highscores[this.initials];
+        if (highscore !== undefined) delete this.game.highscores[this.initials];
+        this.initials = initials;
+        this.game.setHighscore(this.initials, Math.max(this.score, highscore || 0));
+    }
+
     scored() {
         this.score++;
+        if (this.initials) this.game.setHighscore(this.initials, this.score);
     }
 }
 Ship.register("Ship");
@@ -264,6 +293,7 @@ class Display extends Croquet.View {
         super(model);
         this.model = model;
         this.context = canvas.getContext("2d");
+        this.smoothing = new WeakMap(); // position cache for interpolated rendering
 
         document.onkeydown = (e) => {
             if (e.repeat) return;
@@ -282,6 +312,23 @@ class Display extends Croquet.View {
                 case "ArrowUp":    this.publish(this.viewId, "forward-thruster", false); break;
             }
         };
+
+        initials.onchange = () => {
+            this.publish(this.viewId, "set-initials", initials.value);
+            localStorage.setItem("io.croquet.multiblaster.initials", initials.value);
+        }
+        if (localStorage.getItem("io.croquet.multiblaster.initials")) {
+            initials.value = localStorage.getItem("io.croquet.multiblaster.initials");
+            this.publish(this.viewId, "set-initials", initials.value);
+            // after reloading, our previous ship with initials is still there, so just try again once
+            setTimeout(() => this.publish(this.viewId, "set-initials", initials.value), 1000);
+        }
+        initials.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                initials.blur();
+                e.preventDefault();
+            }
+        }
     }
 
     // update is called once per render frame
@@ -290,21 +337,38 @@ class Display extends Croquet.View {
         this.context.lineWidth = 3;
         this.context.strokeStyle = "white";
         this.context.fillStyle = "rgba(255, 255, 255, 0.5)";
-        this.context.font = "40px sans-serif";
+        this.context.font = "30px sans-serif";
         this.context.textBaseline = "middle";
+        // model highscore only keeps players with initials, merge with unnamed players
+        const highscore = Object.entries(this.model.highscores);
+        const labels = new Map();
+        for (const ship of this.model.ships.values()) {
+            let label = ship.initials;
+            if (!label) {
+                label = `Player ${labels.size + 1}`;
+                highscore.push([label, ship.score]);
+            }
+            labels.set(ship, label);
+        }
+        // draw sorted highscore
+        for (const [i, [label, score]] of highscore.sort((a, b) => b[1] - a[1]).entries()) {
+            this.context.fillText(`${i + 1}. ${label}: ${score}`, 10, 30 + i * 35);
+        }
+        // draw asteroids, ships, and blasts
         for (const asteroid of this.model.asteroids) {
-            const { x, y, a, size, wasHit } = asteroid;
+            const { x, y, a } = this.smoothPosAndAngle(asteroid);
+            const { size } = asteroid;
             this.context.save();
             this.context.translate(x, y);
             this.context.rotate(a);
             this.context.beginPath();
-            if (!wasHit) {
+            if (!asteroid.wasHit) {
                 this.context.moveTo(+size,  0);
                 this.context.lineTo( 0, +size);
                 this.context.lineTo(-size,  0);
                 this.context.lineTo( 0, -size);
             } else {
-                const t = wasHit;
+                const t = asteroid.wasHit;
                 this.context.moveTo(+size + t,  0 + t);
                 this.context.lineTo( 0 + t, +size + t);
                 this.context.moveTo(-size - t,  0 - t);
@@ -318,21 +382,25 @@ class Display extends Croquet.View {
             this.context.stroke();
             this.context.restore();
         }
+        this.context.font = "40px sans-serif";
         for (const ship of this.model.ships.values()) {
-            const { x, y, a, viewId, score, wasHit } = ship;
+            const { x, y, a } = this.smoothPosAndAngle(ship);
             this.context.save();
             this.context.translate(x, y);
-            this.context.fillText(score, 30 - wasHit * 2, 0);
+            this.context.textAlign = "right";
+            this.context.fillText(labels.get(ship), -30 + ship.wasHit * 2, 0);
+            this.context.textAlign = "left";
+            this.context.fillText(ship.score, 30 - ship.wasHit * 2, 0);
             this.context.rotate(a);
             this.context.beginPath();
-            if (!wasHit) {
+            if (!ship.wasHit) {
                 this.context.moveTo(+20,   0);
                 this.context.lineTo(-20, +10);
                 this.context.lineTo(-20, -10);
                 this.context.closePath();
-                if (viewId === this.viewId) this.context.fill();
+                if (ship.viewId === this.viewId) this.context.fill();
             } else {
-                const t = wasHit;
+                const t = ship.wasHit;
                 this.context.moveTo(+20 + t,   0 + t);
                 this.context.lineTo(-20 + t, +10 + t);
                 this.context.moveTo(-20 - t * 1.4, +10);
@@ -344,7 +412,7 @@ class Display extends Croquet.View {
             this.context.restore();
         }
         for (const blast of this.model.blasts) {
-            const { x, y } = blast;
+            const { x, y } = this.smoothPos(blast);
             this.context.save();
             this.context.translate(x, y);
             this.context.beginPath();
@@ -354,6 +422,26 @@ class Display extends Croquet.View {
             this.context.restore();
             this.context.beginPath();
         }
+    }
+
+    smoothPos(obj) {
+        if (!this.smoothing.has(obj)) {
+            this.smoothing.set(obj, { x: obj.x, y: obj.y, a: obj.a });
+        }
+        const smoothed = this.smoothing.get(obj);
+        const dx = obj.x - smoothed.x;
+        const dy = obj.y - smoothed.y;
+        // if distance is large, don't smooth but jump to new position
+        if (Math.abs(dx) < 50) smoothed.x += dx * 0.3; else smoothed.x = obj.x;
+        if (Math.abs(dy) < 50) smoothed.y += dy * 0.3; else smoothed.y = obj.y;
+        return smoothed;
+    }
+
+    smoothPosAndAngle(obj) {
+        const smoothed = this.smoothPos(obj);
+        const da = obj.a - smoothed.a;
+        if (Math.abs(da) < 1) smoothed.a += da * 0.3; else smoothed.a = obj.a;
+        return smoothed;
     }
 }
 

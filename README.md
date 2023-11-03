@@ -76,17 +76,24 @@ both side-by-side with the same session name and password to see the difference.
 
 ## Step 8
 
-_yet to be written_
-
 Add persistent highscore.
+
+This step adds a text input field for players' initials (emoji work too).
+Its value is kept in `localStorage` so players only have to type it once.
+
+A highscore table is added to the model, and persisted using `persistSession()` call.
+Persisting means that the important session contents survives even if the model code changes,
+which normally means it starts from scratch. If persisted data exists for a session that uses
+the same name but new code, it will be passed into the root model's `init()` method.
 
 ## Step 9
 
 Code: [step9.html](step9.html) ([RUN](https://croquet.github.io/multiblaster-tutorial/step9.html))
 
-This is the finished tutorial game.
-It has some more features, like
+This is the finished tutorial game. It has some more features, like
 * support for mobile devices via touch input
+* ASDW keys in addition to arrow keys
+* visible thrusters
 * "wrapped" drawing so that objects are half-visible on both sides when crossing the screen edge
 * prevents ships getting destroyed by an asteroid in the spawn position
 * etc.
@@ -95,5 +102,7 @@ It has some more features, like
 
 There's an even more polished game with some gimmicks at
 https://github.com/croquet/multiblaster/
+
+One of its gimmicks is that if the initials contain an emoji, it will be used for shooting.
 
 You can play it online at https://croquet.io/multiblaster/

@@ -292,6 +292,7 @@ class Display extends Croquet.View {
         this.context.strokeStyle = "white";
         this.context.fillStyle = "rgba(255, 255, 255, 0.5)";
         this.context.font = "40px sans-serif";
+        this.context.textBaseline = "middle";
         for (const asteroid of this.model.asteroids) {
             const { x, y, a } = this.smoothPosAndAngle(asteroid);
             const { size } = asteroid;
