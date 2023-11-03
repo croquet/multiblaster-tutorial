@@ -4,7 +4,7 @@ Each HTML file in this project contains an increasingly complex multiplayer game
 
 ## Step 0
 
-Code: [step0.html](step0.html)
+Code: [step0.html](step0.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step0.html)
 
 This is a non-Croquet app. It shows a few asteroids floating through space.
 
@@ -12,7 +12,7 @@ If you run this in two windows, the asteroids will float differently.
 
 ## Step 1
 
-Code: [step1.html](step1.html)
+Code: [step1.html](step1.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step1.html)
 
 This is the same app, but using a Croquet Model for the asteroids.
 
@@ -22,7 +22,7 @@ the asteroids will float the same.
 
 ## Step 2
 
-Code: [step2.html](step2.html)
+Code: [step2.html](step2.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step2.html)
 
 This step adds interactive space ships.
 
@@ -33,7 +33,7 @@ Key up and down events of the arrow keys publish events to enable and disable th
 
 ## Step 3
 
-Code: [step3.html](step3.html)
+Code: [step3.html](step3.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step3.html)
 
 When pressing the space bar, a blaster event is published.
 
@@ -42,21 +42,21 @@ moves in the direction of the ship, and destroys itself after a while.
 
 ## Step 4
 
-Code: [step4.html](step4.html)
+Code: [step4.html](step4.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step4.html)
 
 In this the we add collision detection between the blasts and the asteroids.
 When hit, Asteroids split into two smaller chunks, or are destroyed completely.
 
 ## Step 5
 
-Code: [step5.html](step5.html)
+Code: [step5.html](step5.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step5.html)
 
 Add collision between ships and asteroids.
 Turn both into debris that's floating for a while.
 
 ## Step 6
 
-Code: [step6.html](step6.html)
+Code: [step6.html](step6.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step6.html)
 
 Add scoring for ships hitting an asteroid. Also, draw our own ship filled.
 
@@ -74,7 +74,7 @@ Add persistent highscore.
 
 ## Step 9
 
-Code: [step9.html](step9.html)
+Code: [step9.html](step9.html) [LIVE](https://croquet.github.io/multiblaster-tutorial/step9.html)
 
 This is the finished tutorial game.
 
