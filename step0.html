@@ -1,0 +1,79 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+        <title>Croquet Multiblaster</title>
+        <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+                background: #999;
+            }
+            #canvas {
+                object-fit: contain;
+                max-width: 100%;
+                max-height: 100%;
+                background: #000;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas" width="1000" height="1000"></canvas>
+        <script>
+// create a drawing context
+const context = canvas.getContext("2d");
+context.lineWidth = 3;
+context.strokeStyle = "white";
+
+// define a moving Asteroid
+class Asteroid {
+    constructor() {
+        this.x = Math.random() * 1000, 
+        this.y = Math.random() * 1000,
+        this.dx = Math.random() * 4 - 2,
+        this.dy = Math.random() * 4 - 2,
+        this.a = 0;
+        this.da = 0.02;
+        this.move();
+    }
+
+    move() {
+        this.x = (this.x + this.dx + 1000) % 1000;
+        this.y = (this.y + this.dy + 1000) % 1000;
+        this.a = (this.a + this.da + Math.PI) % Math.PI;
+        setTimeout(() => this.move(), 50);
+    }
+};
+
+// create some asteroids
+const asteroids = new Set();
+asteroids.add(new Asteroid());
+asteroids.add(new Asteroid());
+asteroids.add(new Asteroid());
+
+// draw asteroids in each render frame
+function update() {
+    context.clearRect(0, 0, 1000, 1000);
+    for (const asteroid of asteroids) {
+        const {x, y, a} = asteroid;
+        context.save();
+        context.translate(x, y);
+        context.rotate(a);
+        context.beginPath();
+        context.moveTo(+40,  0);
+        context.lineTo( 0, +40);
+        context.lineTo(-40,  0);
+        context.lineTo( 0, -40);
+        context.closePath();
+        context.stroke();
+        context.restore();
+    }
+    requestAnimationFrame(update);
+}
+
+// start drawing loop
+update();
+
+        </script>
+    </body>
+</html>

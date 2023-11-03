@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+        <title>Croquet Multiblaster</title>
+        <style>
+            html, body {
+                margin: 0;
+                height: 100%;
+                background: #999;
+            }
+            #canvas {
+                background: #000;
+                object-fit: contain;
+                max-width: 100%;
+                max-height: 100%;
+            }
+        </style>
+        <script src="https://unpkg.com/@croquet/croquet@1.0"></script>
+    </head>
+    <body>
+        <canvas id="canvas" width="1000" height="1000"></canvas>
+        <script>
+
+class Game extends Croquet.Model {
+    init() {
+        this.asteroids = new Set();
+        this.asteroids.add(Asteroid.create());
+        this.asteroids.add(Asteroid.create());
+        this.asteroids.add(Asteroid.create());
+   }
+}
+Game.register("Game");
+
+class Asteroid extends Croquet.Model {
+    init() {
+        this.size = 40;
+        this.x = Math.random() * 1000;
+        this.y = Math.random() * 1000;
+        this.dx = Math.random() * 6 - 3;
+        this.dy = Math.random() * 6 - 3;
+        this.a = Math.random() * Math.PI * 2;
+        this.da = (0.02 + Math.random() * 0.03) * (Math.random() < 0.5 ? 1 : -1);
+        this.move();
+    }
+
+    move() {
+        this.x = (this.x + this.dx + 1000) % 1000;
+        this.y = (this.y + this.dy + 1000) % 1000;
+        this.a = (this.a + this.da + Math.PI) % Math.PI;
+        this.future(50).move(); // keep moving every 50 ms
+    }
+}
+Asteroid.register("Asteroid");
+
+class Display extends Croquet.View {
+    constructor(model) {
+        super(model);
+        this.model = model;
+        this.context = canvas.getContext("2d");
+    }
+
+    // update is called once per render frame
+    update() {
+        this.context.clearRect(0, 0, 1000, 1000);
+        this.context.lineWidth = 3;
+        this.context.strokeStyle = "white";
+        for (const asteroid of this.model.asteroids) {
+            const { x, y, a, size } = asteroid;
+            this.context.save();
+            this.context.translate(x, y);
+            this.context.rotate(a);
+            this.context.beginPath();
+            this.context.moveTo(+size,  0);
+            this.context.lineTo( 0, +size);
+            this.context.lineTo(-size,  0);
+            this.context.lineTo( 0, -size);
+            this.context.closePath();
+            this.context.stroke();
+            this.context.restore();
+        }
+    }
+}
+
+
+Croquet.Session.join({
+    apiKey: '1_i65fcn11n7lhrb5n890hs3dhj11hfzfej57pvlrx', // get your own from croquet.io/keys
+    appId: 'io.croquet.multiblaster-tutorial',
+    name: Croquet.App.autoSession(),
+    password: Croquet.App.autoPassword(),
+    model: Game,
+    view: Display,
+});
+        </script>
+    </body>
+</html>
