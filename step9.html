@@ -270,7 +270,7 @@ class Asteroid extends SpaceObject {
     }
 
     hitBy(blast) {
-        if (!blast.ship.wasHit) blast.ship.scored();
+        blast.ship.scored();
         if (this.size > 20) {
             // split into two smaller faster asteroids
             this.size *= 0.7;
@@ -309,7 +309,11 @@ class Blast extends SpaceObject {
 
     move() {
         // move for 1.5 second before disappearing
-        if (++this.t > 30) return this.destroy();
+        this.t++;
+        if (this.t > 30) {
+            this.destroy();
+            return;
+        }
         super.move();
     }
 

@@ -28,7 +28,7 @@ context.strokeStyle = "white";
 // define a moving Asteroid
 class Asteroid {
     constructor() {
-        this.x = Math.random() * 1000, 
+        this.x = Math.random() * 1000,
         this.y = Math.random() * 1000,
         this.dx = Math.random() * 4 - 2,
         this.dy = Math.random() * 4 - 2,
@@ -54,6 +54,8 @@ asteroids.add(new Asteroid());
 // draw asteroids in each render frame
 function update() {
     context.clearRect(0, 0, 1000, 1000);
+    context.lineWidth = 3;
+    context.strokeStyle = "white";
     for (const asteroid of asteroids) {
         const {x, y, a} = asteroid;
         context.save();
