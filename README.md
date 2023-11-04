@@ -179,9 +179,12 @@ both side-by-side with the same session name and password to see the difference.
 
 ## Step 8: Persistent table of highscores
 
+([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step8.html))
+      ([run](https://croquet.github.io/multiblaster-tutorial/step8.html))
+
 Add persistent highscore.
 
-This step adds a text input field for players' initials (emoji work too).
+This step adds a text input field for players' initials (or an emoji).
 Its value is kept in `localStorage` so players only have to type it once.
 
 A highscore table is added to the model, and persisted using `persistSession()` call.
