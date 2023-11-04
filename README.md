@@ -1,5 +1,8 @@
 # Croquet Multiblaster Tutorial
 
+![Screencapture](step9.gif)
+_[CLICK HERE TO PLAY](https://croquet.github.io/multiblaster-tutorial/step9.html) – scan the QR code or share the generated session URL to invite other players._
+
 Each HTML file in [this repository](https://github.com/croquet/multiblaster-tutorial/)
 contains an increasingly complete multiplayer game built using [Croquet](https://croquet.io/docs/).
 
