@@ -12,7 +12,7 @@ They can also shoot blasts which cause asteroids to break up and vanish.
 Successful blasts increase the player's score, while colliding with an asteroid
 causes a ship to be destroyed and lose all points.
 
-## Step 0
+## Step 0: Asteroids floating without Croquet
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step0.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step0.html))
@@ -33,7 +33,7 @@ This causes the asteroid to come back in on the other side when it floats out.
 
 This file has about 80 lines of code total.
 
-## Step 1
+## Step 1: Asteroids synchronized with Croquet
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step1.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step1.html))
@@ -72,7 +72,7 @@ via the network. They are already available locally.
 However, you must take care to not accidentally modify any model properties directly,
 because that would break the synchronization. See the next step for how to interact with the model.
 
-## Step 2
+## Step 2: Spaceships controlled by players
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step2.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step2.html))
@@ -96,7 +96,7 @@ Before joining the session, `makeWidgetDock()` enables a QR code widget in the l
 This allows you to join the same session not only by copying the session URL but also by scanning
 this code with a mobile device.
 
-## Step 3
+## Step 3: Firing a blaster
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step3.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step3.html))
@@ -113,7 +113,7 @@ accessing the `Game` as the well-known `modelRoot`.
 
     get game() { return this.wellKnownModel("modelRoot"); }
 
-## Step 4
+## Step 4: Break up asteroids when hit by blasts
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step4.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step4.html))
@@ -128,7 +128,7 @@ When an asteroid was hit by a blast, it shrinks itself and changes direction per
 Also it creates another asteroid that goes into the opposite direction. This makes it appear as if
 the asteroid broke into two pieces.
 
-## Step 5
+## Step 5: Turn ship into debris after colliding with asteroids
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step5.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step5.html))
@@ -146,14 +146,20 @@ Also, while the ship's `wasHit` is non-zero, its `move()` method ignores the thr
 and the blaster cannot be fired. This forces the player to wait until the ship is reset to the
 center of the screen.
 
-## Step 6
+## Step 6: Score points when hitting an asteroid with a blast
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step6.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step6.html))
 
-Add scoring for ships hitting an asteroid. Also, draw our own ship filled.
+Add scoring for ships hitting an asteroid.
+When a blast is fired, we store a reference to the ship in the blast.
+When the blast hits an asteroid, the ship's `scored()` method is called, which increments its `score`.
 
-## Step 7
+The `update()` method displays each ship's score next to the ship.
+Also, to better distinguish our own ship, we draw it filled.
+We find our own ship by comparing its `viewId` to the local `viewId`.
+
+## Step 7: View-side animation smoothing
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step7.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step7.html))
@@ -168,7 +174,7 @@ model position, and updating the render position "smoothly."
 This step uses the exact same model code as in step 7, so you can actually run
 both side-by-side with the same session name and password to see the difference.
 
-## Step 8
+## Step 8: Persistent table of highscores
 
 Add persistent highscore.
 
@@ -180,7 +186,7 @@ Persisting means that the important session contents survives even if the model 
 which normally means it starts from scratch. If persisted data exists for a session that uses
 the same name but new code, it will be passed into the root model's `init()` method.
 
-## Step 9
+## Step 9: Support for mobile etc.
 
 ([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step9.html))
       ([run](https://croquet.github.io/multiblaster-tutorial/step9.html))
@@ -193,7 +199,7 @@ This is the finished tutorial game. It has some more features, like
 * prevents ships getting destroyed by an asteroid in the spawn position
 * etc.
 
-## Full Game
+## Advanced Game
 
 There's an even more polished game with some gimmicks at
 https://github.com/croquet/multiblaster/
