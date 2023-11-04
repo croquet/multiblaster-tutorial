@@ -1,7 +1,7 @@
 # Croquet Multiblaster Tutorial
 
-Each HTML file in this project contains an increasingly complete
-multiplayer game built using [Croquet](https://croquet.io/docs/).
+Each HTML file in [this repository](https://github.com/croquet/multiblaster-tutorial/)
+contains an increasingly complete multiplayer game built using [Croquet](https://croquet.io/docs/).
 
 It's a 2D game, and its visuals are intentionally kept simple so that the code is more understandable.
 
