@@ -16,6 +16,8 @@ They can also shoot blasts which cause asteroids to break up and vanish.
 Successful blasts increase the player's score, while colliding with an asteroid
 causes a ship to be destroyed and lose all points.
 
+**Please use our [Documentation](https://croquet.io/docs/croquet/) alongside this tutorial, and join our [Discord](https://croquet.io/discord) for questions**
+
 ## Step 0: Asteroids floating without Croquet
 
 ([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step0.html))
@@ -613,3 +615,7 @@ https://github.com/croquet/multiblaster/
 One of its gimmicks is that if the initials contain an emoji, it will be used for shooting. The trickiest part of that is properly parsing out the emoji, which can be composed of many code points 😉
 
 You can play it online at https://croquet.io/multiblaster/
+
+## Further Information
+
+Please use our [Documentation](https://croquet.io/docs), and join our [Discord](https://croquet.io/discord) for questions!
