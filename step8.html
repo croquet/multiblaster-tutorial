@@ -319,8 +319,8 @@ class Display extends Croquet.View {
         };
 
         initials.onchange = () => {
-            this.publish(this.viewId, "set-initials", initials.value);
             localStorage.setItem("io.croquet.multiblaster.initials", initials.value);
+            this.publish(this.viewId, "set-initials", initials.value);
         }
         if (localStorage.getItem("io.croquet.multiblaster.initials")) {
             initials.value = localStorage.getItem("io.croquet.multiblaster.initials");

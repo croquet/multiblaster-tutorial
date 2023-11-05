@@ -76,9 +76,12 @@ the asteroids will float exactly the same in both.
 The app is devided into two parts: The "model" is the part that is synchronized
 by Croquet for all users. It is like a shared computer that all users directly
 interact with. The other part is the "view", which displays the model to the user
-by drawing the asteroids on a canvas.
+by drawing the asteroids on a canvas. These parts are subclassed from
+`Croquet.Model` and `Croquet.View`, respectively.
 
-The last few lines instruct Croquet to join a session for a particular model and view class.
+The last few lines instruct Croquet to join a session for a particular model and view class
+via `Croquet.Session.join()`. The name and password for this session are taken from
+the current URL, or generated automatically using `autoSession()` and `autoPassword`.
 It also needs an API key. You should fetch your own key from https://croquet.io/keys
 
 This version has only 20 lines more than the non-Croquet one from step 0.
@@ -402,30 +405,163 @@ update() {
 ([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step7.html))
 ([run it](https://croquet.github.io/multiblaster-tutorial/step7.html))
 
-Add render smoothing for 60 fps animation. The models move at 20 fps (because of the 50 ms future send
+Now we add render smoothing for 60 fps animation.
+The models move at 20 fps (because of the 50 ms future send
 in the main loop) but for smooth animation you typically want to animate at a higher fps.
 While we could increase the model update rate, that would make the timing depend very much
 on the steadiness of ticks from the reflector.
 Instead, we do automatic in-betweening in the view by decoupling the rendering position from the
 model position, and updating the render position "smoothly."
 
+The view-side objects with the current rendering position and angle are held in a weak map:
+```js
+this.smoothing = new WeakMap();
+```
+
+It maps from the model objects (asteroids, ships, blasts) to plain JS objects
+like `{x, y, a}` that are then used for rendering. Alternatively, we could create
+individual View classes for each Model class by subclassing `Croquet.View`,
+but for this simple game that seems unnecessary. With the `WeakMap` approach
+we avoid having to track creation and destruction of model objects.
+
+The initial values of the view-side objects are copied from the model objects.
+In each step, the difference between the model value and view value is calculated.
+If the difference is too large, it means the model object jumped to a new position
+(e.g. when the ship is reset), and we snap the view object to that new position.
+Otherwise, we smoothly interpolate from the previous view position to the current
+model position. The "smooth" factor of `0.3` can be tweaked. It works well for a
+20 fps simulation with 60 fps rendering, but works pretty well in other cases too:
+
+```js
+smoothPos(obj) {
+    if (!this.smoothing.has(obj)) {
+        this.smoothing.set(obj, { x: obj.x, y: obj.y, a: obj.a });
+    }
+    const smoothed = this.smoothing.get(obj);
+    const dx = obj.x - smoothed.x;
+    const dy = obj.y - smoothed.y;
+    // if distance is large, don't smooth but jump to new position
+    if (Math.abs(dx) < 50) smoothed.x += dx * 0.3; else smoothed.x = obj.x;
+    if (Math.abs(dy) < 50) smoothed.y += dy * 0.3; else smoothed.y = obj.y;
+    return smoothed;
+}
+```
+
+The rendering in the `update()` method uses the smoothed `x`, `y` and `a` values
+and fetches other properties directly from the model objects:
+
+```js
+    for (const asteroid of this.model.asteroids) {
+        const { x, y, a } = this.smoothPosAndAngle(asteroid);
+        const { size } = asteroid;
+        ...
+    }
+```
+
 This step uses the exact same model code as in step 7, so you can actually run
-both side-by-side with the same session name and password to see the difference.
+both side-by-side with the same session name and password to see the difference
+in animation quality.
 
 ## Step 8: Persistent table of highscores
 
 ([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step8.html))
 ([run it](https://croquet.github.io/multiblaster-tutorial/step8.html))
 
-Add persistent highscore.
+Now we add a persistent highscore. Croquet automatically snapshots the model data and
+keeps that session state even when everyone leaves the session. When you resume it later by joining the session, everything will continue just as before. That means a highscore table in the model would appear to be "persistent".
 
-This step adds a text input field for players' initials (or an emoji).
-Its value is kept in `localStorage` so players only have to type it once.
+However, whenever we change the model code, a new session is created, even it has the
+same name (internally, Croquet takes a hash of the registered model class source code).
+The old session state becomes inaccessible, because for one we cannot know if the
+new code will work with the old state, but more importantly, every client in the session
+needs to execute exactly the same code to ensure determinism. Otherwise, different clients
+would compute different states, and the session would diverge.
 
-A highscore table is added to the model, and persisted using `persistSession()` call.
-Persisting means that the important session contents survives even if the model code changes,
-which normally means it starts from scratch. If persisted data exists for a session that uses
-the same name but new code, it will be passed into the root model's `init()` method.
+To keep important data from a previous session of the same name, we need to use Croquet's
+explicit persistence. An app can call `persistSession()` with some JSON data to store
+that persistent state. When a new session is started (no snapshot exists) but there is
+some persisted data from the previous session of the same name, this will be passed
+into the root model's `init()` method as a second argument.
+
+We add a text input field for players' initials (or an emoji).
+Its value is both published to the model, and kept in `localStorage` for the view,
+so players only have to type it once.
+
+```js
+initials.onchange = () => {
+    localStorage.setItem("io.croquet.multiblaster.initials", initials.value);
+    this.publish(this.viewId, "set-initials", initials.value);
+}
+```
+
+On startup we check `localStorage` to automatically re-use the stored initials.
+
+```js
+if (localStorage.getItem("io.croquet.multiblaster.initials")) {
+    initials.value = localStorage.getItem("io.croquet.multiblaster.initials");
+    this.publish(this.viewId, "set-initials", initials.value);
+}
+```
+
+In the model, we add a highscore table. It is initialized from previously presisted
+state, or set to an empty object:
+
+```js
+init(_, persisted) {
+    this.highscores = persisted?.highscores ?? {};
+    ...
+}
+```
+
+When a player sets their initials, we ensure that no two ships have the same
+initials. Also, if a player renames themselves, we rename their table entry
+(you could use different strategies here, depending on what makes most sense
+for your game):
+
+```js
+setInitials(initials) {
+    if (!initials) return;
+    for (const ship of this.game.ships.values()) {
+        if (ship.initials === initials) return;
+    }
+    const highscore = this.game.highscores[this.initials];
+    if (highscore !== undefined) delete this.game.highscores[this.initials];
+    this.initials = initials;
+    this.game.setHighscore(this.initials, Math.max(this.score, highscore || 0));
+}
+```
+
+When a ship scores and has initials, it will add that to the highscore:
+
+```js
+scored() {
+    this.score++;
+    if (this.initials) this.game.setHighscore(this.initials, this.score);
+}
+```
+
+The table is only updated if the new score is above the highscore.
+And if the table was modified, then we call `persistSession()` with a
+JSON oject. This is the object that will be passed into `init()` of the next
+session (but never the same session, because the same session starts
+from a snapshot and does not call `init()` ever again):
+
+```js
+setHighscore(initials, score) {
+    if (this.highscores[initials] >= score) return;
+    this.highscores[initials] = score;
+    this.persistSession({ highscores: this.highscores });
+}
+```
+
+In a more complex application, you should design the JSON persistence
+format carefully, e.g. by including a version number so that future code
+versions can correctly interpret the data written by an older version.
+Croquet makes no assumptions about this, it only stores and retrieves
+that data.
+
+From this point on, even when you change the model code, the highscores
+will always be there.
 
 ## Step 9: Support for mobile etc.
 
@@ -439,6 +575,35 @@ This is the finished tutorial game. It has some more features, like
 * "wrapped" drawing so that objects are half-visible on both sides when crossing the screen edge
 * prevents ships getting destroyed by an asteroid in the spawn position
 * etc.
+
+We're not going to go into much detail here because all of these are independent
+of Croquet, it's more about playability and web UX.
+
+One cute thing is the "wrapped rendering". If an object is very close to the edge
+of the screen, its other "half" should be visible on the other side to maintain
+illusion of a continuous space world. That means it needs to be drawn twice
+(or even 4 times if it is in a corner):
+
+```js
+drawWrapped(x, y, size, draw) {
+    const drawIt = (x, y) => {
+        this.context.save();
+        this.context.translate(x, y);
+        draw();
+        this.context.restore();
+    }
+    drawIt(x, y);
+    // draw again on opposite sides if object is near edge
+    if (x - size < 0) drawIt(x + 1000, y);
+    if (x + size > 1000) drawIt(x - 1000, y);
+    if (y - size < 0) drawIt(x, y + 1000);
+    if (y + size > 1000) drawIt(x, y - 1000);
+    if (x - size < 0 && y - size < 0) drawIt(x + 1000, y + 1000);
+    if (x + size > 1000 && y + size > 1000) drawIt(x - 1000, y - 1000);
+    if (x - size < 0 && y + size > 1000) drawIt(x + 1000, y - 1000);
+    if (x + size > 1000 && y - size < 0) drawIt(x - 1000, y + 1000);
+}
+```
 
 ## Advanced Game
 
