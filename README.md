@@ -18,8 +18,8 @@ causes a ship to be destroyed and lose all points.
 
 ## Step 0: Asteroids floating without Croquet
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step0.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step0.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step0.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step0.html))
 
 This is a non-Croquet app. It shows a few asteroids floating through space.
 If you run this in two windows, the asteroids will float differently.
@@ -64,8 +64,8 @@ This file has about 80 lines of code total.
 
 ## Step 1: Asteroids synchronized with Croquet
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step1.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step1.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step1.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step1.html))
 
 This is the same app, but using a Croquet Model for the asteroids.
 
@@ -131,8 +131,8 @@ because that would break the synchronization. See the next step for how to inter
 
 ## Step 2: Spaceships controlled by players
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step2.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step2.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step2.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step2.html))
 
 This step adds interactive space ships.
 
@@ -229,8 +229,8 @@ this code with a mobile device.
 
 ## Step 3: Firing a blaster
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step3.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step3.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step3.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step3.html))
 
 When pressing the space bar, a `"fire-blaster"` event is published.
 The ship subscribes to that event and creates a new blast that
@@ -270,8 +270,8 @@ move() {
 
 ## Step 4: Break up asteroids when hit by blasts
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step4.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step4.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step4.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step4.html))
 
 In this step the we add collision detection between the blasts and the asteroids.
 When hit, Asteroids split into two smaller chunks, or are destroyed completely.
@@ -310,8 +310,8 @@ hitBy(blast) {
 
 ## Step 5: Turn ship into debris after colliding with asteroids
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step5.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step5.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step5.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step5.html))
 
 Now we add collision between ships and asteroids, and turn both into debris which is floating for a while.
 
@@ -361,8 +361,8 @@ if (!wasHit) {
 
 ## Step 6: Score points when hitting an asteroid with a blast
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step6.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step6.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step6.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step6.html))
 
 Add scoring for ships hitting an asteroid.
 When a blast is fired, we store a reference to the ship in the blast.
@@ -399,8 +399,8 @@ update() {
 
 ## Step 7: View-side animation smoothing
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step7.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step7.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step7.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step7.html))
 
 Add render smoothing for 60 fps animation. The models move at 20 fps (because of the 50 ms future send
 in the main loop) but for smooth animation you typically want to animate at a higher fps.
@@ -414,8 +414,8 @@ both side-by-side with the same session name and password to see the difference.
 
 ## Step 8: Persistent table of highscores
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step8.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step8.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step8.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step8.html))
 
 Add persistent highscore.
 
@@ -429,8 +429,8 @@ the same name but new code, it will be passed into the root model's `init()` met
 
 ## Step 9: Support for mobile etc.
 
-([source](https://github.com/croquet/multiblaster-tutorial/blob/main/step9.html))
-      ([run](https://croquet.github.io/multiblaster-tutorial/step9.html))
+([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step9.html))
+([run it](https://croquet.github.io/multiblaster-tutorial/step9.html))
 
 This is the finished tutorial game. It has some more features, like
 * support for mobile devices via touch input
@@ -445,6 +445,6 @@ This is the finished tutorial game. It has some more features, like
 There's an even more polished game with some gimmicks at
 https://github.com/croquet/multiblaster/
 
-One of its gimmicks is that if the initials contain an emoji, it will be used for shooting.
+One of its gimmicks is that if the initials contain an emoji, it will be used for shooting. The trickiest part of that is properly parsing out the emoji, which can be composed of many code points 😉
 
 You can play it online at https://croquet.io/multiblaster/
