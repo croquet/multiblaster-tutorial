@@ -84,7 +84,7 @@ by drawing the asteroids on a canvas. These parts are subclassed from
 The last few lines instruct Croquet to join a session for a particular model and view class
 via `Croquet.Session.join()`. The name and password for this session are taken from
 the current URL, or generated automatically using `autoSession()` and `autoPassword`.
-It also needs an API key. You should fetch your own key from https://croquet.io/keys
+It also needs an API key. You should fetch your own key from [croquet.io/keys](https://croquet.io/keys/).
 
 This version has only 20 lines more than the non-Croquet one from step 0.
 
@@ -610,11 +610,11 @@ drawWrapped(x, y, size, draw) {
 ## Advanced Game
 
 There's an even more polished game with some gimmicks at
-https://github.com/croquet/multiblaster/
+[github.com/croquet/multiblaster](https://github.com/croquet/multiblaster/).
 
 One of its gimmicks is that if the initials contain an emoji, it will be used for shooting. The trickiest part of that is properly parsing out the emoji, which can be composed of many code points 😉
 
-You can play it online at https://croquet.io/multiblaster/
+You can play it online at [croquet.io/multiblaster](https://croquet.io/multiblaster/).
 
 ## Further Information
 
