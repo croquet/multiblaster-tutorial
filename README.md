@@ -278,7 +278,7 @@ move() {
 ([full source code](https://github.com/croquet/multiblaster-tutorial/blob/main/step4.html))
 ([run it](https://croquet.github.io/multiblaster-tutorial/step4.html))
 
-In this step the we add collision detection between the blasts and the asteroids.
+In this step we add collision detection between the blasts and the asteroids.
 When hit, Asteroids split into two smaller chunks, or are destroyed completely.
 
 To make this simpler, the individual future messages are now replaced by a single `mainLoop()`
@@ -505,7 +505,7 @@ if (localStorage.getItem("io.croquet.multiblaster.initials")) {
 }
 ```
 
-In the model, we add a highscore table. It is initialized from previously presisted
+In the model, we add a highscore table. It is initialized from previously persisted
 state, or set to an empty object:
 
 ```js
